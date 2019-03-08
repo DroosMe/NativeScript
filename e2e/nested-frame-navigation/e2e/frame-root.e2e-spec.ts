@@ -1,6 +1,6 @@
 import { AppiumDriver, createDriver } from "nativescript-dev-appium";
 
-import { Screen, playersData, home, somePage, teamsData, driverDefaultWaitTime } from "./screen";
+import { Screen, playersData, home, somePage, teamsData, driverDefaultWaitTime, stillOtherPage } from "./screen";
 import * as shared from "./shared.e2e-spec";
 import { suspendTime, appSuspendResume, dontKeepActivities, transitions } from "./config";
 
@@ -282,6 +282,94 @@ describe("frame-root:", () => {
                 await screen.goBackFromFrameHome();
                 await screen.loadedHome();
             });
+        });
+    });
+
+    describe("frame to nested frame with non-default transition", () => {
+        const playerOne = playersData["playerOneSlide"];
+
+        it("loaded home page", async () => {
+            await screen.loadedHome();
+        });
+
+        it("loaded frame root with nested frame non-default transition", async () => {
+            await screen.navigateToPageWithFrameNonDefaultTransition();
+            await screen.loadedPageWithFrame();
+        });
+
+        it ("go back to home page again", async () => {
+            if (appSuspendResume) {
+                await driver.backgroundApp(suspendTime);
+                await driver.waitForElement(playerOne.name); // wait for players list
+            }
+
+            await screen.goBackFromFrameHome();
+            await screen.loadedHome();
+        });
+    });
+
+    describe("nested frame to frame with non-default transition", () => {
+        it("loaded home page", async () => {
+            await screen.loadedHome();
+        });
+
+        it("loaded frame root with nested frame", async () => {
+            await screen.navigateToPageWithFrame();
+            await screen.loadedPageWithFrame();
+        });
+    
+        it("navigate to some page with slide transition", async () => {
+            shared.testSomePageNavigatedSlide(screen);
+
+            if (appSuspendResume) {
+                await driver.backgroundApp(suspendTime);
+                await driver.waitForElement(somePage); // wait for some page
+            }
+        });
+
+        it("navigate to still other page and go back twice", async () => {
+            shared.testStillOtherPageNavigatedSlide(screen);
+
+            if (appSuspendResume) {
+                await driver.backgroundApp(suspendTime);
+                await driver.waitForElement(stillOtherPage); // wait for still other page
+            }
+
+            if (driver.isAndroid) {
+                await driver.navBack(); // some page back navigation
+            } else {
+                await screen.goBackFromStillOtherPage();
+            }
+
+            await screen.loadedSomePage();
+
+            if (appSuspendResume) {
+                await driver.backgroundApp(suspendTime);
+                await driver.waitForElement(somePage); // wait for some page
+            }
+
+            shared.testStillOtherPageNavigatedSlide(screen);
+
+            if (appSuspendResume) {
+                await driver.backgroundApp(suspendTime);
+                await driver.waitForElement(stillOtherPage); // wait for still other page
+            }
+
+            if (driver.isAndroid) {
+                await driver.navBack(); // some page back navigation
+            } else {
+                await screen.goBackFromStillOtherPage();
+            }
+
+            await screen.loadedSomePage();
+        });
+
+        it("go back to home page again", async () => {
+            await screen.goBackFromSomePage();
+
+            await screen.goBackFromFrameHome();
+
+            await screen.loadedHome();
         });
     });
 });
